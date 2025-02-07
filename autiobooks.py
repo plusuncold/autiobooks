@@ -25,6 +25,7 @@ def start_gui():
     window_height = 900
     root.geometry(f"{window_width}x{window_height}")
     root.resizable(True, True)
+    root.option_add("*Font", "Arial 12")  # Set default font
 
     # check ffmpeg is installed
     if not shutil.which('ffmpeg'):
@@ -37,8 +38,7 @@ def start_gui():
     voice_frame.pack(pady=5, padx=5)
 
     # add a scale to set speed
-    speed_label = tk.Label(voice_frame, text="Reading speed:",
-                           font=('Arial', 12))
+    speed_label = tk.Label(voice_frame, text="Reading speed:")
     speed_label.pack(side=tk.LEFT, pady=5, padx=5)
 
     def check_speed_range(event=None):
@@ -55,8 +55,7 @@ def start_gui():
 
     speed_entry = tk.Entry(
         voice_frame,
-        width=5,
-        font=('Arial', 12)
+        width=5
     )
     speed_entry.insert(0, "1.0")
     speed_entry.pack(side=tk.LEFT, pady=5, padx=15)
@@ -68,16 +67,14 @@ def start_gui():
     gpu_acceleration_checkbox = tk.Checkbutton(
         voice_frame,
         text="Enable GPU acceleration",
-        variable=gpu_acceleration,
-        font=('Arial', 12)
+        variable=gpu_acceleration
     )
 
     if get_gpu_acceleration_available():
         gpu_acceleration_checkbox.pack(side=tk.LEFT, pady=5, padx=15)
     
     # add a combo box with voice options
-    voice_label = tk.Label(voice_frame, text="Select Voice:",
-                           font=('Arial', 12))
+    voice_label = tk.Label(voice_frame, text="Select Voice:")
     voice_label.pack(side=tk.LEFT, pady=5, padx=5)
 
     # add a combo box with voice options
@@ -85,8 +82,7 @@ def start_gui():
     voice_combo = ttk.Combobox(
         voice_frame,
         values=voices_emojified,
-        state="readonly",
-        font=('Arial', 12)
+        state="readonly"
     )
     voice_combo.set(voices[0])  # Set default selection
     voice_combo.pack(side=tk.LEFT, pady=10, padx=5)
@@ -253,10 +249,8 @@ def start_gui():
                     text = chapter.extracted_text
                     if i == 1:
                         text = f"{title} by {creator}.\n{text}"
-                    wav_filename = f"{filename.replace('.epub',
-                                                       f'_chapter_{i}.wav')}"
-                    progress_label.config(text=f"Converting chapter {i} of {
-                                                 len(chapters_selected)}")
+                    wav_filename = filename.replace('.epub', f'_chapter_{i}.wav')
+                    progress_label.config(text=f"Converting chapter {i} of {len(chapters_selected)}")
                     if convert_text_to_wav_file(text, voice,
                                                 speed, wav_filename):
                         wav_files.append(wav_filename)

@@ -30,9 +30,23 @@ def get_gpu_acceleration_available():
     return torch.cuda.is_available()
 
 
+def create_pipeline(lang_code):
+    """Create a KPipeline instance with proper UTF-8 encoding handling"""
+    import builtins
+    original_open = builtins.open
+    def utf8_open(file, mode='r', *args, **kwargs):
+        if 'b' not in mode and 'encoding' not in kwargs:
+            kwargs['encoding'] = 'utf-8'
+        return original_open(file, mode, *args, **kwargs)
+    try:
+        builtins.open = utf8_open
+        return KPipeline(lang_code=lang_code)
+    finally:
+        builtins.open = original_open
+
 def gen_audio_segments(text, voice, speed, split_pattern=r'\n+'):
     # a for american or b for british etc.
-    pipeline = KPipeline(lang_code=voice[0])
+    pipeline = create_pipeline(voice[0])
     audio_segments = []
     speed = float(speed)
     for gs, ps, audio in pipeline(text, voice=voice, speed=speed,
