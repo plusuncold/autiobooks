@@ -13,6 +13,19 @@ It supports American, British English, French, Korean, Japanese and Mandarin (th
 
 PRs are welcome!
 
+## Changelog
+
+#### 1.0.1
+Initial release
+
+#### 1.0.2
+Window can be resized
+
+#### 1.0.3
+- Fix bug causing errors on some linux installs
+- Read epub files with chapters not marked as ITEM_DOCUMENT
+- Select all chapters if none are selected
+
 ## How to install and run
 
 (Note that pip installs are currently not working - we are looking
