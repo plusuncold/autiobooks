@@ -15,6 +15,10 @@ PRs are welcome!
 
 ## How to install and run
 
+(Note that pip installs are currently not working - we are looking
+into the cause of this, but in the meantime, please download the 
+repo and run directly)
+
 If you have Python 3 on your computer, you can install it with pip.
 Be aware that it won't work with Python 3.13.
 
@@ -30,7 +34,7 @@ sudo apt install ffmpeg python3-tkinter
 ```
 MacOS:
 ```bash
-brew install ffmpeg python3-tkinter
+brew install ffmpeg python-tk
 ```
 
 To start the program, run:

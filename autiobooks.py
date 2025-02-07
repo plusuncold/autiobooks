@@ -237,6 +237,11 @@ def start_gui():
                 chapters_selected = [chapter
                                      for chapter, var in checkbox_vars.items()
                                      if var.get()]
+                if not chapters_selected:
+                    for chapter, var in checkbox_vars.items():
+                        var.set(True)
+                    print("No chapters were selected, defaulting to all.")
+                    chapters_selected = chapters
                 set_gpu_acceleration(gpu_acceleration.get())
                 filename = Path(file_path).name
                 title = get_title(book)
@@ -259,7 +264,7 @@ def start_gui():
 
                 if not wav_files:
                     messagebox.showerror("Error",
-                                         "No chapters were selected.")
+                                         "No chapters were converted.")
 
                 progress_label.config(text="Creating index file")
                 create_index_file(title, creator, wav_files)
