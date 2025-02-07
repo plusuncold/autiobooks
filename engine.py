@@ -62,14 +62,30 @@ def get_book(file_path, resized):
     return (book, chapters, cover_image)
 
 
+def is_valid_chapter(chapter):
+    print(chapter.get_type())
+    if chapter.get_type() == ebooklib.ITEM_DOCUMENT:
+        return True
+    if chapter.get_type() == ebooklib.ITEM_UNKNOWN:
+        if chapter.media_type == 'text/html':
+            return True
+    return False
+
+
 def find_document_chapters_and_extract_texts(book):
     """Returns every chapter that is an ITEM_DOCUMENT
     and enriches each chapter with extracted_text."""
     document_chapters = []
     for chapter in book.get_items():
-        if chapter.get_type() != ebooklib.ITEM_DOCUMENT:
+        if not is_valid_chapter(chapter):
             continue
-        xml = chapter.get_body_content()
+        try:
+            xml = chapter.get_body_content()
+        except:
+            try:
+                xml = chapter.get_content()
+            except:
+                continue
         soup = BeautifulSoup(xml, features='lxml')
         chapter_text = ''
         html_content_tags = ['title', 'p', 'h1', 'h2', 'h3', 'h4', 'li']
