@@ -6,11 +6,12 @@ import ebooklib
 from ebooklib import epub
 import torch
 import io
+import os
 from pathlib import Path
 from bs4 import BeautifulSoup
 from kokoro import KPipeline
-from pydub import AudioSegment
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, TemporaryDirectory
+from concurrent.futures import ThreadPoolExecutor
 from PIL import Image, ImageTk
 
 
@@ -98,43 +99,53 @@ def find_document_chapters_and_extract_texts(book):
     return document_chapters
 
 
-def create_m4b(chapter_files, filename, cover_image):
-    tmp_filename = filename.replace('.epub', '.tmp.mp4')
-    if not Path(tmp_filename).exists():
-        combined_audio = AudioSegment.empty()
-        for wav_file in chapter_files:
-            audio = AudioSegment.from_wav(wav_file)
-            combined_audio += audio
-
-        combined_audio.export(tmp_filename, format="mp4", codec="aac",
-                              bitrate="64k")
-    final_filename = filename.replace('.epub', '.m4b')
-
-    if cover_image:
-        cover_image_file = NamedTemporaryFile("wb")
-        cover_image_file.write(cover_image)
-        cover_image_args = ["-i", cover_image_file.name,
-                            "-map", "0:a",
-                            "-map", "2:v"]
-    else:
-        cover_image_args = []
-
-    proc = subprocess.run([
+def convert_wav_to_m4a(wav_file_path, m4a_file_path):
+    subprocess.run([
         'ffmpeg',
-        '-i', f'{tmp_filename}',
-        '-i', 'chapters.txt',
-        '-y',
-        *cover_image_args,
-        '-map', '0',
-        '-map_metadata', '1',
-        '-c:a', 'copy',
-        '-c:v', 'copy',
-        '-disposition:v', 'attached_pic',
-        '-c', 'copy',
-        '-f', 'mp4',
-        f'{final_filename}'
+        '-i', wav_file_path,
+        '-c:a', 'aac',
+        '-b:a', '64k',
+        m4a_file_path
     ])
-    Path(tmp_filename).unlink()
+
+
+def create_m4b(chapter_files, filename, cover_image):
+    with TemporaryDirectory() as tempdir:
+        # Create concat file
+        concat_file = os.path.join(tempdir, 'concat.txt')
+        with open(concat_file, 'w') as file:
+            for wav_file in chapter_files:
+                m4a_file_path = os.path.join(tempdir, wav_file.replace('.wav', '.m4a'))
+                file.write(f"file '{m4a_file_path}'\n")
+        
+        # Convert the wav files to m4a in parallel
+        with ThreadPoolExecutor() as tpe:
+            for wav_file in chapter_files:
+                m4a_file_path = os.path.join(tempdir, wav_file.replace('.wav', '.m4a'))
+                tpe.submit(convert_wav_to_m4a, wav_file, m4a_file_path)
+
+        # FFmpeg arguments for cover image if present
+        cover_image_args = []
+        if cover_image:
+            cover_image_file = NamedTemporaryFile("wb")
+            cover_image_file.write(cover_image)
+            cover_image_args = [
+                "-i", cover_image_file.name, 
+                '-disposition:v', 'attached_pic'
+            ]
+
+        # Merge all the converted m4a files into one big file (no encoding needed)
+        final_filename = filename.replace('.epub', '.m4b')
+        subprocess.run([
+            'ffmpeg',
+            '-safe', '0',
+            '-f', 'concat',
+            '-i', concat_file,
+            '-i', 'chapters.txt',
+            *cover_image_args,
+            '-c', 'copy',
+            final_filename
+        ])
 
 
 def probe_duration(file_name):

@@ -11,3 +11,4 @@ build
 *.egg-info
 *.txt
 .DS_Store
+.vscode
