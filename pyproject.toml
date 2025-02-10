@@ -26,3 +26,6 @@ Homepage = "https://github.com/plusuncold/autiobooks"
 Documentation = "https://github.com/plusuncold/autiobooks"
 Repository = "https://github.com/plusuncold/autiobooks"
 Issues = "https://github.com/plusuncold/autiobooks/issues"
+
+[project.scripts]
+autiobooks = "autiobooks.autiobooks:main"
