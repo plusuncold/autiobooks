@@ -115,20 +115,36 @@ def create_m4b(chapter_files, filename, cover_image):
         concat_file = os.path.join(tempdir, 'concat.txt')
         with open(concat_file, 'w') as file:
             for wav_file in chapter_files:
-                m4a_file_path = os.path.join(tempdir, wav_file.replace('.wav', '.m4a'))
+                m4a_file_path = os.path.join(tempdir, Path(wav_file).stem + '.m4a')
                 file.write(f"file '{m4a_file_path}'\n")
         
         # Convert the wav files to m4a in parallel
         with ThreadPoolExecutor() as tpe:
+            futures = []
             for wav_file in chapter_files:
-                m4a_file_path = os.path.join(tempdir, wav_file.replace('.wav', '.m4a'))
-                tpe.submit(convert_wav_to_m4a, wav_file, m4a_file_path)
+                m4a_file_path = os.path.join(tempdir, Path(wav_file).stem + '.m4a')
+                futures.append(tpe.submit(convert_wav_to_m4a, wav_file, m4a_file_path))
+
+        # Wait for all conversions to finish
+        for future in futures:
+            future.result()
+
+        # Debug: Check if all expected m4a files exist before merging
+        print("Checking files before merging:")
+        with open(concat_file, "r") as f:
+            print(f.read())  # Show which files ffmpeg expects
+
+        for line in open(concat_file):
+            file_path = line.strip().split("file ")[-1].strip("'")
+            if not os.path.exists(file_path):
+                print(f"Missing file: {file_path}")
 
         # FFmpeg arguments for cover image if present
         cover_image_args = []
         if cover_image:
-            cover_image_file = NamedTemporaryFile("wb")
+            cover_image_file = NamedTemporaryFile("wb", delete=False)
             cover_image_file.write(cover_image)
+            cover_image_file.close() # close it
             cover_image_args = [
                 "-i", cover_image_file.name, 
                 '-disposition:v', 'attached_pic'
@@ -145,7 +161,7 @@ def create_m4b(chapter_files, filename, cover_image):
             *cover_image_args,
             '-c', 'copy',
             final_filename
-        ])
+        ], check=True)
 
 
 def probe_duration(file_name):
